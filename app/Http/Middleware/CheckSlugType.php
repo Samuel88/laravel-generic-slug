@@ -19,23 +19,24 @@ class CheckSlugType
      * Handle an incoming request.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @throws \Symfony\Component\HttpKernel\Exception\HttpException
      */
     public function handle(Request $request, Closure $next): Response
     {
         $slug = $request->route('slug');
 
         $guessClasses = [
-            Page::class => PageController::class,
-            Product::class => ProductController::class,
-            Category::class => CategoryController::class,
+            Page::class => [PageController::class, 'show'],
+            Product::class => [ProductController::class, 'show'],
+            Category::class => [CategoryController::class, 'show'],
         ];
 
         $trovato = false;
-        foreach ($guessClasses as $classModelName => $classControllerName) {
+        foreach ($guessClasses as $classModelName => [$classControllerName, $classMethodName]) {
             if ($entity = $classModelName::where('slug', $slug)->first()) {
                 $request->route()->setAction([
-                    'uses' => "{$classControllerName}@show",
-                    //'controller' => "{$classControllerName}@show",
+                    'uses' => "{$classControllerName}@{$classMethodName}",
+                    //'controller' => "{$classControllerName}@{$classMethodName}",
                 ]);
                 $request->route()->setParameter('slug', $entity);
                 //$request->route()->setParameter('product', $product);
